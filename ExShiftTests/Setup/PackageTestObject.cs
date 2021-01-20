@@ -57,26 +57,6 @@ namespace ExShift.Tests.Setup
 
         }
 
-        public string GetTableName()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public string GetShortName()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public double GetIndex()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void SetIndex(double index)
-        {
-            throw new System.NotImplementedException();
-        }
-
         public override bool Equals(object obj)
         {
             return obj is PackageTestObjectNested nested &&
@@ -106,26 +86,6 @@ namespace ExShift.Tests.Setup
                 new PackageTestObjectNested("nested_list_2"),
                 new PackageTestObjectNested("nested_list_3")
             };
-        }
-
-        public string GetTableName()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public string GetShortName()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public double GetIndex()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void SetIndex(double index)
-        {
-            throw new System.NotImplementedException();
         }
     }
 }

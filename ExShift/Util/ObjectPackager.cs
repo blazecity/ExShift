@@ -1,4 +1,5 @@
 ﻿using ExShift.Mapping;
+using Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,22 +15,11 @@ namespace ExShift.Util
         private readonly ExcelObjectMapper eom;
         public Dictionary<string, object> Properties { get; }
 
-        public ObjectPackager(IPersistable obj, ExcelObjectMapper eom = null)
+        public ObjectPackager(IPersistable obj)
         {
             this.obj = obj;
-            if (eom == null)
-            {
-                this.eom = new ExcelObjectMapper();
-            }
-            else
-            {
-                this.eom = eom;
-            }
+            eom = new ExcelObjectMapper();
             Properties = new Dictionary<string, object>();
-        }
-
-        public ObjectPackager() 
-        { 
         }
 
         public string Package()
@@ -93,14 +83,7 @@ namespace ExShift.Util
                     continue;
                 }
                 JsonElement jsonElement = resolvedDict[property.Name];
-                Dictionary<Type, Func<string, dynamic>> actionTable = new Dictionary<Type, Func<string, dynamic>>
-                {
-                    {typeof(int), str => jsonElement.GetInt32() },
-                    {typeof(double), str => jsonElement.GetDouble() },
-                    {typeof(string), str => jsonElement.GetString() },
-                    {typeof(bool), str => jsonElement.GetBoolean() }
-                };
-                property.SetValue(newObject, actionTable[property.PropertyType].Invoke(jsonElement.GetRawText()));
+                property.SetValue(newObject, ConvertJsonElement(property.PropertyType, jsonElement));
             }
             return newObject;
         }
@@ -109,6 +92,18 @@ namespace ExShift.Util
         {
             JsonDocument json = JsonDocument.Parse(payload);
             return json.RootElement;
+        }
+
+        public static dynamic ConvertJsonElement(Type dataType, JsonElement jsonEl)
+        {
+            Dictionary<Type, Func<JsonElement, dynamic>> actionTable = new Dictionary<Type, Func<JsonElement, dynamic>>
+                {
+                    {typeof(int), jsonElement => jsonElement.GetInt32() },
+                    {typeof(double), jsonElement => jsonElement.GetDouble() },
+                    {typeof(string), jsonElement => jsonElement.GetString() },
+                    {typeof(bool), jsonElement => jsonElement.GetBoolean() }
+                };
+            return actionTable[dataType].Invoke(jsonEl);
         }
 
         private MethodInfo GetGenericMethod(string name, Type genericType, Type methodOrigin = null)

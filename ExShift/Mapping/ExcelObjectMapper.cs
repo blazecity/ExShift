@@ -17,9 +17,15 @@ namespace ExShift.Mapping
 
         private Worksheet CreateUnformattedTable(string name)
         {
-            Worksheet ws = workbook.Worksheets.Add();
-            ws.Name = name;
+            
+            Worksheet ws = FindTable(name);
+            if (ws == null)
+            {
+                ws = workbook.Worksheets.Add();
+                ws.Name = name;
+            }
             return ws;
+            
         }
 
         private Worksheet FindTable(string name)
@@ -97,7 +103,7 @@ namespace ExShift.Mapping
 
         public void Persist<T>(T obj) where T : IPersistable
         {
-            ObjectPackager packager = new ObjectPackager(obj, this);
+            ObjectPackager packager = new ObjectPackager(obj);
             string jsonPayload = packager.Package();
             Worksheet table = GetPersistenceTable<T>();
             int row = ChangeRowCounter(typeof(T).Name, 1);
@@ -118,15 +124,13 @@ namespace ExShift.Mapping
             return BinarySearch(table, primaryKey);
         }
 
-        public List<string> GetAll<T>()
+        public IEnumerable<string> GetAll<T>()
         {
-            List<string> result = new List<string>();
             Range dataColumn = FindTable(typeof(T).Name).UsedRange.Columns[2];
             foreach (Range cell in dataColumn.Cells)
             {
-                result.Add(cell.Value.ToString());
+                yield return cell.Value.ToString();
             }
-            return result;
         }
 
         private string BinarySearch(Worksheet table, IComparable target)

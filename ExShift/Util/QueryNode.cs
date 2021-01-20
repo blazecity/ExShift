@@ -4,15 +4,17 @@ namespace ExShift.Util
 {
     public class QueryNode
     {
-        public QueryOperator Operator { get; set; }
-        public dynamic ExpressionResult { get; set; }
-        public bool Subresult { get; set; }
-        public bool EvalutationResult { get; set; }
+        public QueryOperator Operator { get; }
+        public dynamic Attribute { get; }
+        public dynamic ExpressionResult { get; }
 
         public QueryNode(string expression, QueryOperator queryOperator)
         {
             Regex rgx = new Regex("=");
-            ExpressionResult = rgx.Split(expression, 2)[1];
+            
+            string[] splitExpression = rgx.Split(expression, 2);
+            Attribute = splitExpression[0].Trim();
+            ExpressionResult = splitExpression[1];
             if (!double.TryParse(ExpressionResult, out double number))
             {
                 ExpressionResult = Regex.Match(ExpressionResult, @"(?<=').*(?=')").Value;
@@ -26,7 +28,7 @@ namespace ExShift.Util
 
         public bool EvaluateExpression(dynamic actual)
         {
-            return EvalutationResult = ExpressionResult == actual;
+            return ExpressionResult == actual;
         }
     }
 }
