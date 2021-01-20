@@ -1,6 +1,6 @@
 ﻿/*
  * Author: Jan Baumann
- * Version: 27.09.2020
+ * Version: 20.01.2021
  */
 
 namespace ExShift.Util
