@@ -2,6 +2,8 @@
 using Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace ExShift.Mapping
@@ -15,7 +17,7 @@ namespace ExShift.Mapping
             ExcelObjectMapper.workbook = workbook;
         }
 
-        private Worksheet CreateUnformattedTable(string name)
+        private static Worksheet CreateUnformattedTable(string name)
         {
             
             Worksheet ws = FindTable(name);
@@ -28,7 +30,7 @@ namespace ExShift.Mapping
             
         }
 
-        private Worksheet FindTable(string name)
+        private static Worksheet FindTable(string name)
         {
             try
             {
@@ -40,7 +42,7 @@ namespace ExShift.Mapping
             }
         }
 
-        public void Initialize()
+        public static void Initialize()
         {
             Worksheet sysTable = CreateUnformattedTable("__sys");
             
@@ -51,7 +53,7 @@ namespace ExShift.Mapping
             sysTable.Cells[2, 1].Value = "{}";
         }
 
-        private Worksheet CreatePersistenceTable(string name)
+        private static Worksheet CreatePersistenceTable(string name)
         {
             // Create sheet
             Worksheet table = CreateUnformattedTable(name);
@@ -63,7 +65,7 @@ namespace ExShift.Mapping
             return table;
         }
 
-        public Worksheet GetPersistenceTable<T>() where T : IPersistable
+        public static Worksheet GetPersistenceTable<T>() where T : IPersistable
         {
             string tableName = typeof(T).Name;
             Worksheet ws = FindTable(tableName);
@@ -74,7 +76,7 @@ namespace ExShift.Mapping
             return ws;
         }
 
-        public Worksheet GetPersistenceTable(string tableName)
+        public static Worksheet GetPersistenceTable(string tableName)
         {
             Worksheet ws = FindTable(tableName);
             if (ws == null)
@@ -84,7 +86,7 @@ namespace ExShift.Mapping
             return ws;
         }
 
-        private int ChangeRowCounter(string tableName, int change)
+        private static int ChangeRowCounter(string tableName, int change)
         {
             Worksheet sysTable = FindTable("__sys");
             string jsonCounter = sysTable.Cells[2, 1].Value;
@@ -101,10 +103,10 @@ namespace ExShift.Mapping
             return dictCounter[tableName];
         }
 
-        public void Persist<T>(T obj) where T : IPersistable
+        public static void Persist<T>(T obj) where T : IPersistable
         {
-            ObjectPackager packager = new ObjectPackager(obj);
-            string jsonPayload = packager.Package();
+            ObjectPackager packager = new ObjectPackager();
+            string jsonPayload = packager.Package(obj);
             Worksheet table = GetPersistenceTable<T>();
             int row = ChangeRowCounter(typeof(T).Name, 1);
             table.Cells[row, 1].Value = AttributeHelper.GetPrimaryKey(obj);
@@ -113,18 +115,18 @@ namespace ExShift.Mapping
             usedRange.Sort(usedRange.Columns[1], XlSortOrder.xlAscending);
         }
 
-        public string Find<T>(string primaryKey) where T : IPersistable
+        public static string Find<T>(string primaryKey) where T : IPersistable
         {
             return Find(typeof(T).Name, primaryKey);
         }
 
-        public string Find(string tableName, string primaryKey)
+        public static string Find(string tableName, string primaryKey)
         {
             Worksheet table = GetPersistenceTable(tableName);
             return BinarySearch(table, primaryKey);
         }
 
-        public IEnumerable<string> GetAll<T>()
+        public static IEnumerable<string> GetAll<T>()
         {
             Range dataColumn = FindTable(typeof(T).Name).UsedRange.Columns[2];
             foreach (Range cell in dataColumn.Cells)
@@ -133,7 +135,7 @@ namespace ExShift.Mapping
             }
         }
 
-        private string BinarySearch(Worksheet table, IComparable target)
+        private static string BinarySearch(Worksheet table, IComparable target)
         {
             Range primaryColumn = table.UsedRange.Columns[1];
             
@@ -164,17 +166,77 @@ namespace ExShift.Mapping
             return "";
         }
 
-        public void CreateIndex()
+        public static Worksheet FindIndex<T>(string property) where T : IPersistable
+        {
+            return FindTable("Idx_" + GetShortenedHash(typeof(T).Name + property));
+        }
+
+        private static string GetShortenedHash(string text)
+        {
+            byte[] encoded = Encoding.UTF8.GetBytes(text);
+            SHA256 sha256 = SHA256.Create();
+            byte[] hash = sha256.ComputeHash(encoded);
+            char[] shortenedHash = new char[10];
+            for (int i = 0; i < shortenedHash.Length; i++)
+            {
+                shortenedHash[i] = text[hash[i] % encoded.Length];
+            }
+            return new string(shortenedHash);
+        }
+
+        public static bool CreateIndex<T>(string property) where T : IPersistable
+        {
+            Type propertyType = typeof(T).GetProperty(property).PropertyType;
+
+            // Check if type and property match
+            if (propertyType == null)
+            {
+                return false;
+            }
+
+            // Check if there is already an index for the specified table and attribute
+            if (FindIndex<T>(property) != null)
+            {
+                return true;
+            }
+
+            if (FindTable(typeof(T).Name) == null)
+            {
+                return false;
+            }
+
+            Worksheet indexTable = CreateUnformattedTable("Idx_" + GetShortenedHash(typeof(T).Name + property));
+
+            Dictionary<dynamic, List<int>> index = new Dictionary<dynamic, List<int>>();
+            int rowCounter = 1;
+            foreach (string row in GetAll<T>())
+            {
+                JsonElement jsonElement = ObjectPackager.DeserializeTupel(row);
+                JsonElement jsonProperty = jsonElement.GetProperty(property);
+                dynamic key = ObjectPackager.ConvertJsonElement(propertyType, jsonProperty);
+                if (!index.TryGetValue(key, out List<int> value))
+                {
+                    List<int> newValue = new List<int>
+                    {
+                        rowCounter
+                    };
+                    index.Add(key, newValue);
+                }
+                else
+                {
+                    value.Add(rowCounter);
+                }
+            }
+            indexTable.Cells[1, 1].Value = JsonSerializer.Serialize(index);
+            return true;
+        }
+
+        public static void Update(IPersistable obj)
         {
 
         }
 
-        public void Update(IPersistable obj)
-        {
-
-        }
-
-        public void Delete(IPersistable obj)
+        public static void Delete(IPersistable obj)
         {
             
         }

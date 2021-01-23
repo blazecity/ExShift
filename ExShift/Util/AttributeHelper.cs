@@ -6,7 +6,6 @@ namespace ExShift.Util
 {
     class AttributeHelper
     {
-
         /// <summary>
         /// Gets a list of properties, which are marked with the specified attribute.
         /// </summary>

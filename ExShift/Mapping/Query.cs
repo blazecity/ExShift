@@ -50,13 +50,11 @@ namespace ExShift.Mapping
         public List<T> Run()
         {
             List<T> resultList = new List<T>();
-            ObjectPackager objectPackager = new ObjectPackager(null);
-            ExcelObjectMapper eom = new ExcelObjectMapper();
-            eom.Initialize();
+            ObjectPackager objectPackager = new ObjectPackager();
 
-            foreach (string rawJson in eom.GetAll<T>())
+            foreach (string rawJson in ExcelObjectMapper.GetAll<T>())
             {
-                JsonElement jsonElement = objectPackager.DeserializeTupel(rawJson);
+                JsonElement jsonElement = ObjectPackager.DeserializeTupel(rawJson);
                 bool elementIsQualified = false;
 
                 foreach (QueryNode qn in queryNodes)

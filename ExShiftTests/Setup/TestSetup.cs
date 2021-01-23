@@ -1,6 +1,5 @@
 ﻿using ExShift.Mapping;
 using Microsoft.Office.Interop.Excel;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace ExShiftTests.Setup
 {
@@ -9,18 +8,17 @@ namespace ExShiftTests.Setup
         protected Application app;
         protected Workbook wb;
 
-        [TestInitialize]
-        public void Initalize()
+        public TestSetup()
         {
             app = new Application();
             wb = app.Workbooks.Add();
             ExcelObjectMapper.SetWorkbook(wb);
+            ExcelObjectMapper.Initialize();
         }
 
-        [TestCleanup]
-        public void Cleanup()
+        ~TestSetup()
         {
-            wb.Close(0);
+            wb.Close(false);
             app.Quit();
         }
     }

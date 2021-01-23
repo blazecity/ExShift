@@ -12,17 +12,15 @@ namespace ExShift.Util.Tests
         [TestMethod("Serialize and Deserialize")]
         public void ObjectPackagerDeserializeTest()
         {
-            ExcelObjectMapper eom = new ExcelObjectMapper();
-            eom.Initialize();
             PackageTestObject testObject = new PackageTestObject(1, 2);
-            eom.Persist(testObject.NestedObject);
+            ExcelObjectMapper.Persist(testObject.NestedObject);
             foreach (PackageTestObjectNested obj in testObject.ListOfNestedObjects)
             {
-                eom.Persist(obj);
+                ExcelObjectMapper.Persist(obj);
             }
-            eom.Persist(testObject);
-            ObjectPackager op = new ObjectPackager(null);
-            PackageTestObject deserializedObject = op.Unpackage<PackageTestObject>(eom.Find<PackageTestObject>(testObject.BaseProperty.ToString()));
+            ExcelObjectMapper.Persist(testObject);
+            ObjectPackager op = new ObjectPackager();
+            PackageTestObject deserializedObject = op.Unpackage<PackageTestObject>(ExcelObjectMapper.Find<PackageTestObject>(testObject.BaseProperty.ToString()));
             Assert.AreEqual(testObject, deserializedObject);
         }
     }

@@ -1,9 +1,7 @@
 ﻿using ExShift.Mapping;
-using Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 
@@ -11,18 +9,14 @@ namespace ExShift.Util
 {
     public class ObjectPackager
     {
-        private readonly IPersistable obj;
-        private readonly ExcelObjectMapper eom;
         public Dictionary<string, object> Properties { get; }
 
-        public ObjectPackager(IPersistable obj)
+        public ObjectPackager()
         {
-            this.obj = obj;
-            eom = new ExcelObjectMapper();
             Properties = new Dictionary<string, object>();
         }
 
-        public string Package()
+        public string Package(IPersistable obj)
         {
             List<PropertyInfo> properties = AttributeHelper.GetProperties(obj);
             foreach (PropertyInfo property in properties)
@@ -40,7 +34,7 @@ namespace ExShift.Util
                         Properties.Add(property.Name, foreignKeys);
                         continue;
                     }
-                    ConvertForeignKey(property);
+                    ConvertForeignKey(obj, property);
                 }
                 else
                 {
@@ -70,7 +64,7 @@ namespace ExShift.Util
                         JsonElement list = resolvedDict[property.Name];
                         for (int index = 0; index < list.GetArrayLength(); index++)
                         {
-                            string json = eom.Find(genericType.Name, list[index].ToString());
+                            string json = ExcelObjectMapper.Find(genericType.Name, list[index].ToString());
                             ((IList)newList).Add(GetGenericMethod("Unpackage", genericType).Invoke(this, new string[] { json }));
                         }
                         property.SetValue(newObject, newList);
@@ -78,7 +72,7 @@ namespace ExShift.Util
                     }
                     string[] parameters = new string[1];
                     string primaryKey = resolvedDict[property.Name].ToString();
-                    parameters[0] = eom.Find(property.PropertyType.Name, primaryKey);
+                    parameters[0] = ExcelObjectMapper.Find(property.PropertyType.Name, primaryKey);
                     property.SetValue(newObject, GetGenericMethod("Unpackage", property.PropertyType).Invoke(this, parameters));
                     continue;
                 }
@@ -88,7 +82,7 @@ namespace ExShift.Util
             return newObject;
         }
 
-        public JsonElement DeserializeTupel(string payload)
+        public static JsonElement DeserializeTupel(string payload)
         {
             JsonDocument json = JsonDocument.Parse(payload);
             return json.RootElement;
@@ -117,15 +111,10 @@ namespace ExShift.Util
 
         }
 
-        private void ConvertForeignKey(PropertyInfo property)
+        private void ConvertForeignKey(IPersistable obj, PropertyInfo property)
         {
             IPersistable nestedObject = property.GetValue(obj) as IPersistable;
             Properties.Add(property.Name, AttributeHelper.GetPrimaryKey(nestedObject));
-        }
-
-        private void ResolveForeignKey()
-        {
-
         }
     }
 }

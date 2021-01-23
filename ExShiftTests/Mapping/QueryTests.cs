@@ -12,17 +12,15 @@ namespace ExShift.Mapping.Tests
         public void PersistObjects()
         {
             // Arrange
-            ExcelObjectMapper eom = new ExcelObjectMapper();
-            eom.Initialize();
             for (int i = 0; i < 5; i++)
             {
                 PackageTestObject testObject = new PackageTestObject(i, i + 1);
                 foreach (PackageTestObjectNested nestedObj in testObject.ListOfNestedObjects)
                 {
-                    eom.Persist(nestedObj);
+                    ExcelObjectMapper.Persist(nestedObj);
                 }
-                eom.Persist(testObject.NestedObject);
-                eom.Persist(testObject);
+                ExcelObjectMapper.Persist(testObject.NestedObject);
+                ExcelObjectMapper.Persist(testObject);
             }
         }
 
