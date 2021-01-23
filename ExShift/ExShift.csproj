@@ -72,12 +72,13 @@
     <Compile Include="Mapping\ExcelObjectMapper.cs" />
     <Compile Include="Mapping\Query.cs" />
     <Compile Include="Util\AttributeHelper.cs" />
+    <Compile Include="Util\DataIndex.cs" />
     <Compile Include="Util\ForeignKey.cs" />
+    <Compile Include="Util\Index.cs" />
     <Compile Include="Util\IndexedField.cs" />
     <Compile Include="Util\IPersistable.cs" />
     <Compile Include="Util\MultiValue.cs" />
     <Compile Include="Util\ObjectPackager.cs" />
-    <Compile Include="Util\PersistableConverter.cs" />
     <Compile Include="Util\PrimaryKey.cs" />
     <Compile Include="Util\QueryNode.cs" />
     <Compile Include="Util\QueryOperator.cs" />

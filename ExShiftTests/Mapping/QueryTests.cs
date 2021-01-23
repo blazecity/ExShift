@@ -42,7 +42,7 @@ namespace ExShift.Mapping.Tests
             // Act
             List<PackageTestObject> resultList = Query<PackageTestObject>.Select()
                                                                          .Where("BaseProperty = 'base_1'")
-                                                                         .And("PrimaryKey = 2")
+                                                                         .And("Property = 2")
                                                                          .Run();
 
             // Assert
@@ -55,7 +55,7 @@ namespace ExShift.Mapping.Tests
             // Act
             List<PackageTestObject> resultList = Query<PackageTestObject>.Select()
                                                                          .Where("BaseProperty = 'base_1'")
-                                                                         .Or("PrimaryKey = 2")
+                                                                         .Or("Property = 2")
                                                                          .Run();
 
             // Assert

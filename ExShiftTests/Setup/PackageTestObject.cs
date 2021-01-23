@@ -5,14 +5,15 @@ namespace ExShift.Tests.Setup
 {
     public class PackageTestObject : PackageTestBaseClass
     {
-        public int PrimaryKey { get; set; }
+        [Index]
+        public int Property { get; set; }
         public int DerivedProperty { get; set; }
         [ForeignKey]
         public PackageTestObjectNested NestedObject { get; set; }
 
         public PackageTestObject(int pk, int dp)
         {
-            PrimaryKey = pk;
+            Property = pk;
             DerivedProperty = dp;
             NestedObject = new PackageTestObjectNested("nested_1");
         } 
@@ -26,7 +27,7 @@ namespace ExShift.Tests.Setup
         {
             return obj is PackageTestObject @object &&
                    BaseProperty == @object.BaseProperty &&
-                   PrimaryKey == @object.PrimaryKey &&
+                   Property == @object.Property &&
                    DerivedProperty == @object.DerivedProperty &&
                    EqualityComparer<PackageTestObjectNested>.Default.Equals(NestedObject, @object.NestedObject);
         }
@@ -35,7 +36,7 @@ namespace ExShift.Tests.Setup
         {
             int hashCode = 2054235610;
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(BaseProperty);
-            hashCode = hashCode * -1521134295 + PrimaryKey.GetHashCode();
+            hashCode = hashCode * -1521134295 + Property.GetHashCode();
             hashCode = hashCode * -1521134295 + DerivedProperty.GetHashCode();
             hashCode = hashCode * -1521134295 + EqualityComparer<PackageTestObjectNested>.Default.GetHashCode(NestedObject);
             return hashCode;

@@ -12,9 +12,9 @@ namespace ExShift.Util
         /// <param name="persistable">Object to check (can be default object)</param>
         /// <param name="attributeType">Type of the marking attribute</param>
         /// <returns></returns>
-        public static List<PropertyInfo> GetPropertiesByAttribute(IPersistable persistable, Type attributeType)
+        public static List<PropertyInfo> GetPropertiesByAttribute<T>(Type attributeType)
         {
-            PropertyInfo[] properties = persistable.GetType().GetProperties();
+            PropertyInfo[] properties = typeof(T).GetProperties();
             List<PropertyInfo> multiValueProperties = new List<PropertyInfo>();
             foreach (PropertyInfo property in properties)
             {
@@ -26,9 +26,9 @@ namespace ExShift.Util
             return multiValueProperties;
         }
 
-        public static PropertyInfo GetProperty(IPersistable persistable, Type attributeType)
+        public static PropertyInfo GetProperty<T>(Type attributeType) where T : IPersistable
         {
-            PropertyInfo[] properties = persistable.GetType().GetProperties();
+            PropertyInfo[] properties = typeof(T).GetProperties();
             foreach (PropertyInfo property in properties)
             {
                 if (property.GetCustomAttribute(attributeType) != null)
@@ -39,21 +39,12 @@ namespace ExShift.Util
             return null;
         }
 
-        public static List<PropertyInfo> GetProperties(Type type)
-        {
-            List<PropertyInfo> list = new List<PropertyInfo>();
-            list.AddRange(type.GetProperties());
-            return list;
-        }
-
-        public static List<PropertyInfo> GetProperties(IPersistable persistable)
-        {
-            return GetProperties(persistable.GetType());
-        }
-
         public static string GetPrimaryKey(IPersistable obj)
         {
-            PropertyInfo primaryKey = GetProperty(obj, typeof(PrimaryKey));
+            Type attributeHelperType = typeof(AttributeHelper);
+            MethodInfo getPropertyMethod = attributeHelperType.GetMethod("GetProperty");
+            MethodInfo executableMethod = getPropertyMethod.MakeGenericMethod(obj.GetType());
+            PropertyInfo primaryKey = executableMethod.Invoke(null,  new object[] { typeof(PrimaryKey) }) as PropertyInfo;
             return primaryKey.GetValue(obj).ToString();
         }
     }

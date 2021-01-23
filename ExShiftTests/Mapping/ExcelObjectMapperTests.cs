@@ -48,9 +48,12 @@ namespace ExShift.Mapping.Tests
             string result = ExcelObjectMapper.Find<PackageTestObject>(obj.BaseProperty.ToString());
             ObjectPackager op = new ObjectPackager();
             PackageTestObject retrievedObject = op.Unpackage<PackageTestObject>(result);
+            Dictionary<string, List<int>> index = ExcelObjectMapper.FindIndex<PackageTestObject>("Property");
 
             // Assert
             Assert.AreEqual(3, retrievedObject.ListOfNestedObjects.Count);
+            Assert.AreEqual(1, index["1"][0]);
+
         }
 
         [TestMethod("Create index with integer")]
@@ -68,12 +71,10 @@ namespace ExShift.Mapping.Tests
             // Act
             string propertyName = "DerivedProperty";
             ExcelObjectMapper.CreateIndex<PackageTestObject>(propertyName);
-            Worksheet indexWorksheet = ExcelObjectMapper.FindIndex<PackageTestObject>(propertyName);
-            string index = indexWorksheet.UsedRange.Cells[1, 1].Value;
-            Dictionary<int, List<int>> result = JsonSerializer.Deserialize<Dictionary<int, List<int>>>(index);
+            Dictionary<string, List<int>> index = ExcelObjectMapper.FindIndex<PackageTestObject>(propertyName);
 
             // Assert
-            Assert.AreEqual(1, result[2][0]);
+            Assert.AreEqual(1, index["2"][0]);
         }
 
         [TestMethod("Create index with string")]
@@ -91,12 +92,10 @@ namespace ExShift.Mapping.Tests
             // Act
             string propertyName = "BaseProperty";
             ExcelObjectMapper.CreateIndex<PackageTestObject>(propertyName);
-            Worksheet indexWorksheet = ExcelObjectMapper.FindIndex<PackageTestObject>(propertyName);
-            string index = indexWorksheet.UsedRange.Cells[1, 1].Value;
-            Dictionary<string, List<int>> result = JsonSerializer.Deserialize<Dictionary<string, List<int>>>(index);
+            Dictionary<string, List<int>> index = ExcelObjectMapper.FindIndex<PackageTestObject>(propertyName);
 
             // Assert
-            Assert.AreEqual(1, result["base_1"][0]);
+            Assert.AreEqual(1, index["base_1"][0]);
         }
     }
 }

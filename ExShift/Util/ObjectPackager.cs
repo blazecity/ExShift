@@ -18,7 +18,7 @@ namespace ExShift.Util
 
         public string Package(IPersistable obj)
         {
-            List<PropertyInfo> properties = AttributeHelper.GetProperties(obj);
+            List<PropertyInfo> properties = new List<PropertyInfo>(obj.GetType().GetProperties());
             foreach (PropertyInfo property in properties)
             {
                 if (property.GetCustomAttribute(typeof(ForeignKey)) != null)
@@ -48,23 +48,25 @@ namespace ExShift.Util
         {
             Dictionary<string, JsonElement> resolvedDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonPayload);
             Type type = typeof(T);
-            List<PropertyInfo> propertyList = AttributeHelper.GetProperties(type);
+            List<PropertyInfo> propertyList = new List<PropertyInfo>(type.GetProperties());
             T newObject = new T();
             foreach (PropertyInfo property in propertyList)
             {
                 if (property.GetCustomAttribute<ForeignKey>() != null)
                 {
+                    MethodInfo findMethod = null;
                     if (property.GetCustomAttribute<MultiValue>() != null)
                     {
-                        Type genericType = property.PropertyType.GetGenericArguments()[0];
                         Type propertyTypeWithoutGenericType = property.PropertyType.GetGenericTypeDefinition();
+                        Type genericType = property.PropertyType.GetGenericArguments()[0];
+                        findMethod = typeof(ExcelObjectMapper).GetMethod("Find").MakeGenericMethod(genericType);
                         Type listType = propertyTypeWithoutGenericType.MakeGenericType(genericType);
                         object newList = Activator.CreateInstance(listType);
 
                         JsonElement list = resolvedDict[property.Name];
                         for (int index = 0; index < list.GetArrayLength(); index++)
                         {
-                            string json = ExcelObjectMapper.Find(genericType.Name, list[index].ToString());
+                            string json = findMethod.Invoke(null, new string[] { list[index].ToString() }) as string;
                             ((IList)newList).Add(GetGenericMethod("Unpackage", genericType).Invoke(this, new string[] { json }));
                         }
                         property.SetValue(newObject, newList);
@@ -72,7 +74,8 @@ namespace ExShift.Util
                     }
                     string[] parameters = new string[1];
                     string primaryKey = resolvedDict[property.Name].ToString();
-                    parameters[0] = ExcelObjectMapper.Find(property.PropertyType.Name, primaryKey);
+                    findMethod = typeof(ExcelObjectMapper).GetMethod("Find").MakeGenericMethod(property.PropertyType);
+                    parameters[0] = findMethod.Invoke(null, new string[] { primaryKey }) as string;
                     property.SetValue(newObject, GetGenericMethod("Unpackage", property.PropertyType).Invoke(this, parameters));
                     continue;
                 }
