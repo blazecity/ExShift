@@ -6,7 +6,6 @@ namespace ExShift.Mapping
 {
     public class Query<T> where T : IPersistable, new()
     {
-        private bool join;
         private Queue<QueryNode> queryNodes;
 
         private Query()
@@ -38,12 +37,6 @@ namespace ExShift.Mapping
         {
             QueryNode qn = new QueryNode(expression, QueryOperator.OR);
             queryNodes.Enqueue(qn);
-            return this;
-        }
-
-        public Query<T> Join()
-        {
-            join = true;
             return this;
         }
 
