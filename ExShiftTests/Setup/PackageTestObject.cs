@@ -7,13 +7,14 @@ namespace ExShift.Tests.Setup
     {
         [Index]
         public int Property { get; set; }
+        [PrimaryKey]
         public int DerivedProperty { get; set; }
         [ForeignKey]
         public PackageTestObjectNested NestedObject { get; set; }
 
-        public PackageTestObject(int pk, int dp)
+        public PackageTestObject(int prop, int dp)
         {
-            Property = pk;
+            Property = prop;
             DerivedProperty = dp;
             NestedObject = new PackageTestObjectNested("nested_1");
         } 
@@ -72,7 +73,7 @@ namespace ExShift.Tests.Setup
 
     public class PackageTestBaseClass : IPersistable
     {
-        [PrimaryKey]
+        [Index]
         public string BaseProperty { get; set; }
         [ForeignKey]
         [MultiValue]

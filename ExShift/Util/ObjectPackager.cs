@@ -54,12 +54,12 @@ namespace ExShift.Util
             {
                 if (property.GetCustomAttribute<ForeignKey>() != null)
                 {
-                    MethodInfo findMethod = null;
+                    MethodInfo findMethod;
                     if (property.GetCustomAttribute<MultiValue>() != null)
                     {
                         Type propertyTypeWithoutGenericType = property.PropertyType.GetGenericTypeDefinition();
                         Type genericType = property.PropertyType.GetGenericArguments()[0];
-                        findMethod = typeof(ExcelObjectMapper).GetMethod("Find").MakeGenericMethod(genericType);
+                        findMethod = typeof(ExcelObjectMapper).GetMethod("GetRawEntry").MakeGenericMethod(genericType);
                         Type listType = propertyTypeWithoutGenericType.MakeGenericType(genericType);
                         object newList = Activator.CreateInstance(listType);
 
@@ -74,7 +74,7 @@ namespace ExShift.Util
                     }
                     string[] parameters = new string[1];
                     string primaryKey = resolvedDict[property.Name].ToString();
-                    findMethod = typeof(ExcelObjectMapper).GetMethod("Find").MakeGenericMethod(property.PropertyType);
+                    findMethod = typeof(ExcelObjectMapper).GetMethod("GetRawEntry").MakeGenericMethod(property.PropertyType);
                     parameters[0] = findMethod.Invoke(null, new string[] { primaryKey }) as string;
                     property.SetValue(newObject, GetGenericMethod("Unpackage", property.PropertyType).Invoke(this, parameters));
                     continue;

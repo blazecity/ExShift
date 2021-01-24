@@ -113,26 +113,21 @@ namespace ExShift.Mapping
             table.Cells[row, 1].Value = jsonPayload;
 
             // Update indizes
-            List<PropertyInfo> indexProperties = AttributeHelper.GetPropertiesByAttribute<T>(typeof(Index));
-            indexProperties.AddRange(AttributeHelper.GetPropertiesByAttribute<T>(typeof(PrimaryKey)));
-            foreach (PropertyInfo indexProperty in indexProperties)
-            {
-                UpdateIndex<T>(indexProperty.Name, indexProperty.GetValue(obj).ToString(), row);
-            }
+            UpdateIndizes<T>(obj, row);
         }
 
-        public static void UpdateIndex<T>(string propertyName, string key, int value) where T : IPersistable
+        public static void UpdateIndex<T>(string propertyName, string key, int row) where T : IPersistable
         {
             Dictionary<string, List<int>> index = FindIndex<T>(propertyName);
             if (index.TryGetValue(key, out List<int> values))
             {
-                values.Add(value);
+                values.Add(row);
             }
             else
             {
                 values = new List<int>
                 {
-                    value
+                    row
                 };
                 index.Add(key, values);
             }
@@ -141,12 +136,39 @@ namespace ExShift.Mapping
             ws.Cells[1, 1].Value = JsonSerializer.Serialize(index);
         }
 
-        public static string Find<T>(string primaryKey) where T : IPersistable
+        private static void UpdateIndizes<T>(T obj, int row) where T : IPersistable
+        {
+            List<PropertyInfo> indexProperties = AttributeHelper.GetPropertiesByAttribute<T>(typeof(Index));
+            indexProperties.AddRange(AttributeHelper.GetPropertiesByAttribute<T>(typeof(PrimaryKey)));
+            foreach (PropertyInfo indexProperty in indexProperties)
+            {
+                UpdateIndex<T>(indexProperty.Name, indexProperty.GetValue(obj).ToString(), row);
+            }
+        }
+
+        public static T Find<T>(string primaryKey) where T : IPersistable, new()
+        {
+            ObjectPackager objectPackager = new ObjectPackager();
+            return objectPackager.Unpackage<T>(GetRawEntry<T>(primaryKey));
+        }
+
+        public static string GetRawEntry<T>(string primaryKey) where T : IPersistable, new()
         {
             Worksheet table = GetPersistenceTable<T>();
+            string cellValue = table.Cells[GetRowNumber<T>(primaryKey), 1].Value.ToString();
+            return cellValue;
+        }
+
+        private static int GetRowNumber<T>(string primaryKey) where T : IPersistable, new()
+        {
             Dictionary<string, List<int>> index = FindIndex<T>(AttributeHelper.GetProperty<T>(typeof(PrimaryKey)).Name);
-            int rowNumber = index[primaryKey][0];
-            return table.Cells[rowNumber, 1].Value.ToString();
+            bool primaryKeyExists = index.TryGetValue(primaryKey, out List<int> rowNumbers);
+            if (primaryKeyExists)
+            {
+                int rowNumber = index[primaryKey][0];
+                return rowNumber;
+            }
+            throw new ArgumentException(">> Error 4: There is no record with the specified primary key");
         }
 
         public static IEnumerable<string> GetAll<T>() where T : IPersistable
@@ -240,9 +262,17 @@ namespace ExShift.Mapping
             return true;
         }
 
-        public static void Update(IPersistable obj)
+        public static void Update<T>(T obj) where T : IPersistable, new()
         {
+            // Replace the existing record
+            string primaryKey = AttributeHelper.GetPrimaryKey(obj);
+            int rowNumber = GetRowNumber<T>(primaryKey);
+            Worksheet dataTable = FindTable(obj.GetType().Name);
+            ObjectPackager objectPackager = new ObjectPackager();
+            dataTable.Cells[rowNumber, 1].Value = objectPackager.Package(obj);
 
+            // Reorganize indizes
+            UpdateIndizes(obj, rowNumber);
         }
 
         public static void Delete(IPersistable obj)

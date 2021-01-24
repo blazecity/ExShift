@@ -72,7 +72,6 @@
     <Compile Include="Mapping\ExcelObjectMapper.cs" />
     <Compile Include="Mapping\Query.cs" />
     <Compile Include="Util\AttributeHelper.cs" />
-    <Compile Include="Util\DataIndex.cs" />
     <Compile Include="Util\ForeignKey.cs" />
     <Compile Include="Util\Index.cs" />
     <Compile Include="Util\IndexedField.cs" />
