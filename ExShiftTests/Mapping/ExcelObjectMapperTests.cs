@@ -8,8 +8,13 @@ namespace ExShift.Mapping.Tests
     [TestClass()]
     public class ExcelObjectMapperTests : TestSetup
     {
-        public ExcelObjectMapperTests() : base()
+        [TestInitialize]
+        public void TestInitialize()
         {
+            wb.Close(0);
+            wb = app.Workbooks.Add();
+            ExcelObjectMapper.SetWorkbook(wb);
+            ExcelObjectMapper.Initialize();
             // Arrange
             PackageTestObject obj = new PackageTestObject(1, 2);
             foreach (PackageTestObjectNested nestedObj in obj.ListOfNestedObjects)
@@ -83,6 +88,19 @@ namespace ExShift.Mapping.Tests
 
             // Assert
             Assert.AreEqual(99, objectAfterUpdate.Property);
+        }
+
+        [TestMethod("Delete entry")]
+        public void DeleteEntryTest()
+        {
+            // Act
+            PackageTestObject retrievedObject = ExcelObjectMapper.Find<PackageTestObject>("4");
+            ExcelObjectMapper.Delete(retrievedObject);
+
+            PackageTestObject objectAfterDeletion = ExcelObjectMapper.Find<PackageTestObject>("4");
+
+            // Assert
+            Assert.IsNull(objectAfterDeletion);
         }
     }
 }

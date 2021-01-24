@@ -11,6 +11,11 @@ namespace ExShift.Mapping.Tests
         [TestInitialize]
         public void PersistObjects()
         {
+            wb.Close(0);
+            wb = app.Workbooks.Add();
+            ExcelObjectMapper.SetWorkbook(wb);
+            ExcelObjectMapper.Initialize();
+
             // Arrange
             for (int i = 0; i < 5; i++)
             {

@@ -1,14 +1,18 @@
 ﻿using ExShift.Mapping;
 using Microsoft.Office.Interop.Excel;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Runtime.InteropServices;
 
 namespace ExShiftTests.Setup
 {
+    [TestClass]
     public class TestSetup
     {
-        protected Application app;
-        protected Workbook wb;
+        protected static Application app;
+        protected static Workbook wb;
 
-        public TestSetup()
+        [AssemblyInitialize]
+        public static void Setup(TestContext testContext)
         {
             app = new Application();
             wb = app.Workbooks.Add();
@@ -16,10 +20,15 @@ namespace ExShiftTests.Setup
             ExcelObjectMapper.Initialize();
         }
 
-        ~TestSetup()
+        [AssemblyCleanup]
+        public static void Teardown()
         {
-            wb.Close(false);
+            wb.Close(0);
             app.Quit();
+            Marshal.ReleaseComObject(wb);
+            wb = null;
+            Marshal.ReleaseComObject(app);
+            app = null;
         }
     }
 }
