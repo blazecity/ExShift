@@ -116,7 +116,7 @@ namespace ExShift.Mapping
             UpdateIndizes<T>(obj, row);
         }
 
-        public static void UpdateIndex<T>(string propertyName, string key, int row) where T : IPersistable
+        private static void UpdateIndex<T>(string propertyName, string key, int row) where T : IPersistable
         {
             Dictionary<string, List<int>> index = FindIndex<T>(propertyName);
             if (index.TryGetValue(key, out List<int> values))
@@ -131,9 +131,20 @@ namespace ExShift.Mapping
                 };
                 index.Add(key, values);
             }
-            string tableName = "Idx_" + GetShortenedHash(typeof(T).Name + propertyName);
-            Worksheet ws = FindTable(tableName);
-            ws.Cells[1, 1].Value = JsonSerializer.Serialize(index);
+            ResetIndex<T>(propertyName, index);
+        }
+
+        private static void DeleteIndexEntry<T>(string propertyName, string key, int row) where T : IPersistable
+        {
+            Dictionary<string, List<int>> index = FindIndex<T>(propertyName);
+            if (index.TryGetValue(key, out List<int> values))
+            {
+                if (values.Contains(row))
+                {
+                    values.Remove(row);
+                }
+            }
+            ResetIndex<T>(propertyName, index);
         }
 
         private static void UpdateIndizes<T>(T obj, int row) where T : IPersistable
@@ -146,16 +157,43 @@ namespace ExShift.Mapping
             }
         }
 
+        private static void DeleteIndexEntries<T>(T obj, int row) where T : IPersistable
+        {
+            List<PropertyInfo> indexProperties = AttributeHelper.GetPropertiesByAttribute<T>(typeof(Index));
+            indexProperties.AddRange(AttributeHelper.GetPropertiesByAttribute<T>(typeof(PrimaryKey)));
+            foreach (PropertyInfo indexProperty in indexProperties)
+            {
+                DeleteIndexEntry<T>(indexProperty.Name, indexProperty.GetValue(obj).ToString(), row);
+            }
+        }
+
+        private static void ResetIndex<T>(string propertyName, Dictionary<string, List<int>> index)
+        {
+            string tableName = "Idx_" + GetShortenedHash(typeof(T).Name + propertyName);
+            Worksheet ws = FindTable(tableName);
+            ws.Cells[1, 1].Value = JsonSerializer.Serialize(index);
+        }
+
         public static T Find<T>(string primaryKey) where T : IPersistable, new()
         {
             ObjectPackager objectPackager = new ObjectPackager();
-            return objectPackager.Unpackage<T>(GetRawEntry<T>(primaryKey));
+            string rawEntry = GetRawEntry<T>(primaryKey);
+            if (rawEntry.Equals("-"))
+            {
+                return default;
+            }
+            return objectPackager.Unpackage<T>(rawEntry);
         }
 
         public static string GetRawEntry<T>(string primaryKey) where T : IPersistable, new()
         {
             Worksheet table = GetPersistenceTable<T>();
-            string cellValue = table.Cells[GetRowNumber<T>(primaryKey), 1].Value.ToString();
+            int rowNumber = GetRowNumber<T>(primaryKey);
+            if (rowNumber == -1)
+            {
+                return "-";
+            }
+            string cellValue = table.Cells[rowNumber, 1].Value.ToString();
             return cellValue;
         }
 
@@ -165,7 +203,11 @@ namespace ExShift.Mapping
             bool primaryKeyExists = index.TryGetValue(primaryKey, out List<int> rowNumbers);
             if (primaryKeyExists)
             {
-                int rowNumber = index[primaryKey][0];
+                if (rowNumbers.Count == 0)
+                {
+                    return -1;
+                }
+                int rowNumber = rowNumbers[0];
                 return rowNumber;
             }
             throw new ArgumentException(">> Error 4: There is no record with the specified primary key");
@@ -275,9 +317,20 @@ namespace ExShift.Mapping
             UpdateIndizes(obj, rowNumber);
         }
 
-        public static void Delete(IPersistable obj)
+        public static void Delete<T>(T obj) where T : IPersistable, new()
         {
-            
+            // Remove the exisiting record
+            string primaryKey = AttributeHelper.GetPrimaryKey(obj);
+            string tableName = obj.GetType().Name;
+            int rowNumber = GetRowNumber<T>(primaryKey);
+            Worksheet dataTable = FindTable(tableName);
+            dataTable.Rows[rowNumber].EntireRow.Delete();
+
+            // Decrement row counter
+            ChangeRowCounter(tableName, -1);
+
+            // Reorganize index
+            DeleteIndexEntries(obj, rowNumber);
         }
     }
 }
