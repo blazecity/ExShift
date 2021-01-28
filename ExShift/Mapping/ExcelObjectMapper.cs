@@ -185,15 +185,28 @@ namespace ExShift.Mapping
             return objectPackager.Unpackage<T>(rawEntry);
         }
 
+        public static T Find<T>(int row) where T : IPersistable, new()
+        {
+            ObjectPackager objectPackager = new ObjectPackager();
+            string rawEntry = GetRawEntry<T>(row);
+            return objectPackager.Unpackage<T>(rawEntry);
+            
+        }
+
         public static string GetRawEntry<T>(string primaryKey) where T : IPersistable, new()
         {
-            Worksheet table = GetPersistenceTable<T>();
             int rowNumber = GetRowNumber<T>(primaryKey);
             if (rowNumber == -1)
             {
                 return "-";
             }
-            string cellValue = table.Cells[rowNumber, 1].Value.ToString();
+            return GetRawEntry<T>(rowNumber);
+        }
+
+        public static string GetRawEntry<T>(int row) where T : IPersistable, new()
+        {
+            Worksheet table = GetPersistenceTable<T>();
+            string cellValue = table.Cells[row, 1].Value.ToString();
             return cellValue;
         }
 
@@ -244,6 +257,17 @@ namespace ExShift.Mapping
             return index;
         }
 
+        public static bool IsIndexed<T>(string property) where T : IPersistable
+        {
+            string tableName = "Idx_" + GetShortenedHash(typeof(T).Name + property);
+            Worksheet indexTable = FindTable(tableName);
+            if (indexTable == null)
+            {
+                return false;
+            }
+            return true;
+        }
+
         private static string GetShortenedHash(string text)
         {
             byte[] encoded = Encoding.UTF8.GetBytes(text);
@@ -268,7 +292,7 @@ namespace ExShift.Mapping
             }
 
             // Check if there is already an index for the specified table and attribute
-            if (FindIndex<T>(property) != null)
+            if (IsIndexed<T>(property))
             {
                 return true;
             }

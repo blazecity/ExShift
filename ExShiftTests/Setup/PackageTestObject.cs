@@ -75,6 +75,7 @@ namespace ExShift.Tests.Setup
     {
         [Index]
         public string BaseProperty { get; set; }
+        public string AnotherBaseProperty { get; set; }
         [ForeignKey]
         [MultiValue]
         public List<PackageTestObjectNested> ListOfNestedObjects { get; set; }
@@ -82,6 +83,7 @@ namespace ExShift.Tests.Setup
         public PackageTestBaseClass()
         {
             BaseProperty = "base_1";
+            AnotherBaseProperty = "abp";
             ListOfNestedObjects = new List<PackageTestObjectNested>
             {
                 new PackageTestObjectNested("nested_list_1"),

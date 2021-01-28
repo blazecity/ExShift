@@ -6,7 +6,7 @@ namespace ExShift.Util
     {
         public QueryOperator Operator { get; }
         public dynamic Attribute { get; }
-        public dynamic ExpressionResult { get; }
+        public dynamic Expected { get; }
 
         public QueryNode(string expression, QueryOperator queryOperator)
         {
@@ -14,21 +14,21 @@ namespace ExShift.Util
             
             string[] splitExpression = rgx.Split(expression, 2);
             Attribute = splitExpression[0].Trim();
-            ExpressionResult = splitExpression[1];
-            if (!double.TryParse(ExpressionResult, out double number))
+            Expected = splitExpression[1];
+            if (!double.TryParse(Expected, out double number))
             {
-                ExpressionResult = Regex.Match(ExpressionResult, @"(?<=').*(?=')").Value;
+                Expected = Regex.Match(Expected, @"(?<=').*(?=')").Value;
             }
             else
             {
-                ExpressionResult = number;
+                Expected = number;
             }
             Operator = queryOperator;
         }
 
         public bool EvaluateExpression(dynamic actual)
         {
-            return ExpressionResult == actual;
+            return Expected == actual;
         }
     }
 }
