@@ -15,6 +15,7 @@ namespace ExShift.Mapping.Tests
             wb = app.Workbooks.Add();
             ExcelObjectMapper.SetWorkbook(wb);
             ExcelObjectMapper.Initialize();
+
             // Arrange
             PackageTestObject obj = new PackageTestObject(1, 2);
             foreach (PackageTestObjectNested nestedObj in obj.ListOfNestedObjects)
@@ -101,6 +102,31 @@ namespace ExShift.Mapping.Tests
 
             // Assert
             Assert.IsNull(objectAfterDeletion);
+        }
+
+        [TestMethod("Unique primary key")]
+        public void UniquePrimaryKeyTest()
+        {
+            // Arrange
+            wb.Close(0);
+            wb = app.Workbooks.Add();
+            ExcelObjectMapper.SetWorkbook(wb);
+            ExcelObjectMapper.Initialize();
+            PackageTestObject obj1 = new PackageTestObject(1, 2);
+            PackageTestObject obj2 = new PackageTestObject(1, 2);
+
+            // Act
+            foreach (PackageTestObjectNested nestedObj in obj1.ListOfNestedObjects)
+            {
+                ExcelObjectMapper.Persist(nestedObj);
+            }
+            ExcelObjectMapper.Persist(obj1.NestedObject);
+            ExcelObjectMapper.Persist(obj1);
+            ExcelObjectMapper.Persist(obj2);
+            List<PackageTestObject> resultList = Query<PackageTestObject>.Select().Run();
+
+            // Assert
+            Assert.AreEqual(1, resultList.Count);
         }
     }
 }

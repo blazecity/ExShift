@@ -105,15 +105,24 @@ namespace ExShift.Mapping
 
         public static void Persist<T>(T obj) where T : IPersistable
         {
+            // Check for primary key (must be unique)
+            Worksheet table = GetPersistenceTable<T>();
+            string primaryKey = AttributeHelper.GetPrimaryKey(obj);
+            PropertyInfo primaryKeyProperty = AttributeHelper.GetProperty<T>(typeof(PrimaryKey));
+            Dictionary<string, List<int>> index = FindIndex<T>(primaryKeyProperty.Name);
+            if (index.ContainsKey(primaryKey))
+            {
+                return;
+            }
+
             // Persist object
             ObjectPackager packager = new ObjectPackager();
             string jsonPayload = packager.Package(obj);
-            Worksheet table = GetPersistenceTable<T>();
             int row = ChangeRowCounter(typeof(T).Name, 1);
             table.Cells[row, 1].Value = jsonPayload;
 
             // Update indizes
-            UpdateIndizes<T>(obj, row);
+            UpdateIndizes(obj, row);
         }
 
         private static void UpdateIndex<T>(string propertyName, string key, int row) where T : IPersistable
