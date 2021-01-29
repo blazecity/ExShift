@@ -9,15 +9,28 @@ using System.Text.Json;
 
 namespace ExShift.Mapping
 {
+    /// <summary>
+    /// This class provides the functionality for handling data, such as 
+    /// persiting, updating, deleting and searching (to a certain extent).
+    /// </summary>
     public class ExcelObjectMapper
     {
         private static Workbook workbook;
 
+        /// <summary>
+        /// Sets the current Excel <see cref="Workbook"/> you need to work in.
+        /// </summary>
+        /// <param name="workbook"><see cref="Workbook"/></param>
         public static void SetWorkbook(Workbook workbook)
         {
             ExcelObjectMapper.workbook = workbook;
         }
 
+        /// <summary>
+        /// Creates a plain Excel <see cref="Worksheet"/>.
+        /// </summary>
+        /// <param name="name">Name of the worksheet</param>
+        /// <returns>A new worksheet or an already existing one with the specified name.</returns>
         private static Worksheet CreateUnformattedTable(string name)
         {
             
@@ -31,6 +44,14 @@ namespace ExShift.Mapping
             
         }
 
+        /// <summary>
+        /// Finds an Excel <see cref="Worksheet"/> with the given name.
+        /// </summary>
+        /// <param name="name">Worksheet name</param>
+        /// <returns>
+        /// <see cref="Worksheet"/> if one exists with the specified name 
+        /// or else null if none is found.
+        /// </returns>
         private static Worksheet FindTable(string name)
         {
             try
@@ -43,6 +64,9 @@ namespace ExShift.Mapping
             }
         }
 
+        /// <summary>
+        /// Sets up the internal helper worksheets.
+        /// </summary>
         public static void Initialize()
         {
             Worksheet sysTable = CreateUnformattedTable("__sys");
@@ -54,6 +78,11 @@ namespace ExShift.Mapping
             sysTable.Cells[2, 1].Value = "{}";
         }
 
+        /// <summary>
+        /// Creates a <see cref="Worksheet"/> for data.
+        /// </summary>
+        /// <param name="name">Worksheet name</param>
+        /// <returns><see cref="Worksheet"/></returns>
         private static Worksheet CreatePersistenceTable(string name)
         {
             // Create sheet
@@ -66,6 +95,13 @@ namespace ExShift.Mapping
             return table;
         }
 
+        /// <summary>
+        /// Gets a data table (<see cref="Worksheet"/>).
+        /// Note that, if the table does not exist a new one will be created. 
+        /// Also the indizes are initalized automatically.
+        /// </summary>
+        /// <typeparam name="T">Type of data which will be stored</typeparam>
+        /// <returns>New or existing data table</returns>
         public static Worksheet GetPersistenceTable<T>() where T : IPersistable
         {
             string tableName = typeof(T).Name;
@@ -86,6 +122,12 @@ namespace ExShift.Mapping
             return ws;
         }
 
+        /// <summary>
+        /// Increments or decrements the row counter by the specified amount.
+        /// </summary>
+        /// <param name="tableName">Worksheet name</param>
+        /// <param name="change">Increment or decrement amount</param>
+        /// <returns>Actualized row number of the first empty row</returns>
         private static int ChangeRowCounter(string tableName, int change)
         {
             Worksheet sysTable = FindTable("__sys");
@@ -103,6 +145,11 @@ namespace ExShift.Mapping
             return dictCounter[tableName];
         }
 
+        /// <summary>
+        /// Persist an object.
+        /// </summary>
+        /// <typeparam name="T">Type of object to be persisted</typeparam>
+        /// <param name="obj">Object to persisted</param>
         public static void Persist<T>(T obj) where T : IPersistable
         {
             // Check for primary key (must be unique)
@@ -125,6 +172,13 @@ namespace ExShift.Mapping
             UpdateIndizes(obj, row);
         }
 
+        /// <summary>
+        /// Updates the index entry (in a specific index) when an object is updated.
+        /// </summary>
+        /// <typeparam name="T">Type of object which has been updated</typeparam>
+        /// <param name="propertyName">Property which has changed</param>
+        /// <param name="key">Property value</param>
+        /// <param name="row">New row number</param>
         private static void UpdateIndex<T>(string propertyName, string key, int row) where T : IPersistable
         {
             Dictionary<string, List<int>> index = FindIndex<T>(propertyName);
@@ -143,6 +197,13 @@ namespace ExShift.Mapping
             ResetIndex<T>(propertyName, index);
         }
 
+        /// <summary>
+        /// Deletes an index entry (in a specific index) when an object is deleted from the database.
+        /// </summary>
+        /// <typeparam name="T">Type of objects which has been deleted</typeparam>
+        /// <param name="propertyName">Property name</param>
+        /// <param name="key">Property value</param>
+        /// <param name="row">Former row number</param>
         private static void DeleteIndexEntry<T>(string propertyName, string key, int row) where T : IPersistable
         {
             Dictionary<string, List<int>> index = FindIndex<T>(propertyName);
@@ -156,6 +217,12 @@ namespace ExShift.Mapping
             ResetIndex<T>(propertyName, index);
         }
 
+        /// <summary>
+        /// Updates all index entries (for all indexed properties) when an object is updated.
+        /// </summary>
+        /// <typeparam name="T">Type of object which has been updated</typeparam>
+        /// <param name="obj">Updated object</param>
+        /// <param name="row">Row number of the updated entry</param>
         private static void UpdateIndizes<T>(T obj, int row) where T : IPersistable
         {
             List<PropertyInfo> indexProperties = AttributeHelper.GetPropertiesByAttribute<T>(typeof(Index));
@@ -166,6 +233,12 @@ namespace ExShift.Mapping
             }
         }
 
+        /// <summary>
+        /// Deletes all index entries (for all indexed properties) when an object is deleted from the database.
+        /// </summary>
+        /// <typeparam name="T">Type of objects which has been deleted</typeparam>
+        /// <param name="obj">Object which has been deleted</param>
+        /// <param name="row">Former row number</param>
         private static void DeleteIndexEntries<T>(T obj, int row) where T : IPersistable
         {
             List<PropertyInfo> indexProperties = AttributeHelper.GetPropertiesByAttribute<T>(typeof(Index));
@@ -176,6 +249,12 @@ namespace ExShift.Mapping
             }
         }
 
+        /// <summary>
+        /// Resets the current index with a new one.
+        /// </summary>
+        /// <typeparam name="T">Type which holds the property</typeparam>
+        /// <param name="propertyName">Property name</param>
+        /// <param name="index">New index as <see cref="Dictionary{string, List{int}}"/></param>
         private static void ResetIndex<T>(string propertyName, Dictionary<string, List<int>> index)
         {
             string tableName = "Idx_" + GetShortenedHash(typeof(T).Name + propertyName);
@@ -183,6 +262,12 @@ namespace ExShift.Mapping
             ws.Cells[1, 1].Value = JsonSerializer.Serialize(index);
         }
 
+        /// <summary>
+        /// Finds and returns an (deserialized) object based its primary key.
+        /// </summary>
+        /// <typeparam name="T">Object type</typeparam>
+        /// <param name="primaryKey">Primary key</param>
+        /// <returns>Deserialized object</returns>
         public static T Find<T>(string primaryKey) where T : IPersistable, new()
         {
             ObjectPackager objectPackager = new ObjectPackager();
@@ -194,6 +279,12 @@ namespace ExShift.Mapping
             return objectPackager.Unpackage<T>(rawEntry);
         }
 
+        /// <summary>
+        /// Finds and returns an (deserialized) object based its row number.
+        /// </summary>
+        /// <typeparam name="T">Object type</typeparam>
+        /// <param name="row">Row number</param>
+        /// <returns>Deserialized object</returns>
         public static T Find<T>(int row) where T : IPersistable, new()
         {
             ObjectPackager objectPackager = new ObjectPackager();
@@ -202,6 +293,12 @@ namespace ExShift.Mapping
             
         }
 
+        /// <summary>
+        /// Gets the raw JSON string of an entry based on its primary key.
+        /// </summary>
+        /// <typeparam name="T">Object type</typeparam>
+        /// <param name="row">Row number</param>
+        /// <returns>Raw JSON string</returns>
         public static string GetRawEntry<T>(string primaryKey) where T : IPersistable, new()
         {
             int rowNumber = GetRowNumber<T>(primaryKey);
@@ -212,6 +309,12 @@ namespace ExShift.Mapping
             return GetRawEntry<T>(rowNumber);
         }
 
+        /// <summary>
+        /// Gets the raw JSON string of an entry based on its row number.
+        /// </summary>
+        /// <typeparam name="T">Object type</typeparam>
+        /// <param name="row">Row number</param>
+        /// <returns>Raw JSON string</returns>
         public static string GetRawEntry<T>(int row) where T : IPersistable, new()
         {
             Worksheet table = GetPersistenceTable<T>();
@@ -219,6 +322,12 @@ namespace ExShift.Mapping
             return cellValue;
         }
 
+        /// <summary>
+        /// Get the row number of an entry based on its primary key.
+        /// </summary>
+        /// <typeparam name="T">Type of object to search</typeparam>
+        /// <param name="primaryKey">Primary key</param>
+        /// <returns>Row number if found, else -1</returns>
         private static int GetRowNumber<T>(string primaryKey) where T : IPersistable, new()
         {
             Dictionary<string, List<int>> index = FindIndex<T>(AttributeHelper.GetProperty<T>(typeof(PrimaryKey)).Name);
@@ -235,6 +344,11 @@ namespace ExShift.Mapping
             throw new ArgumentException(">> Error 4: There is no record with the specified primary key");
         }
 
+        /// <summary>
+        /// Yields all entries from a table.
+        /// </summary>
+        /// <typeparam name="T">Object type</typeparam>
+        /// <returns>Yields all entries</returns>
         public static IEnumerable<string> GetAll<T>() where T : IPersistable
         {
             Range dataColumn = FindTable(typeof(T).Name).UsedRange.Columns[1];
@@ -253,6 +367,12 @@ namespace ExShift.Mapping
             }
         }
 
+        /// <summary>
+        /// Gets the index for the specified property.
+        /// </summary>
+        /// <typeparam name="T">Type which holds the property</typeparam>
+        /// <param name="property">Property name</param>
+        /// <returns>Index as <see cref="Dictionary{TKey, TValue}"/> but if none exists <c>null</c> is returned.</returns>
         public static Dictionary<string, List<int>> FindIndex<T>(string property) where T : IPersistable
         {
             string tableName = "Idx_" + GetShortenedHash(typeof(T).Name + property);
@@ -266,6 +386,12 @@ namespace ExShift.Mapping
             return index;
         }
 
+        /// <summary>
+        /// Check if an index for the specified property exists.
+        /// </summary>
+        /// <typeparam name="T">Type which holds the property</typeparam>
+        /// <param name="property">Property name</param>
+        /// <returns><c>True</c> if index exists, else <c>false</c></returns>
         public static bool IsIndexed<T>(string property) where T : IPersistable
         {
             string tableName = "Idx_" + GetShortenedHash(typeof(T).Name + property);
@@ -277,6 +403,11 @@ namespace ExShift.Mapping
             return true;
         }
 
+        /// <summary>
+        /// Gets a hashed representation of a table name.
+        /// </summary>
+        /// <param name="text"><see cref="string"/> to hash</param>
+        /// <returns>Hashed representation of the table name</returns>
         private static string GetShortenedHash(string text)
         {
             byte[] encoded = Encoding.UTF8.GetBytes(text);
@@ -290,6 +421,12 @@ namespace ExShift.Mapping
             return new string(shortenedHash);
         }
 
+        /// <summary>
+        /// Creates a new index for the specified class property.
+        /// </summary>
+        /// <typeparam name="T">Type which holds the property</typeparam>
+        /// <param name="property">Property name</param>
+        /// <returns><c>true</c> if index creation was successful, else <c>false</c></returns>
         public static bool CreateIndex<T>(string property) where T : IPersistable
         {
             Type propertyType = typeof(T).GetProperty(property).PropertyType;
@@ -337,6 +474,11 @@ namespace ExShift.Mapping
             return true;
         }
 
+        /// <summary>
+        /// Updates an exisiting entry.
+        /// </summary>
+        /// <typeparam name="T">Type of object to update</typeparam>
+        /// <param name="obj">Object to update</param>
         public static void Update<T>(T obj) where T : IPersistable, new()
         {
             // Replace the existing record
@@ -350,6 +492,11 @@ namespace ExShift.Mapping
             UpdateIndizes(obj, rowNumber);
         }
 
+        /// <summary>
+        /// Deletes an entry from the table and triggers index reorganisation.
+        /// </summary>
+        /// <typeparam name="T">Type of objects which is deleted.</typeparam>
+        /// <param name="obj">Object to delete</param>
         public static void Delete<T>(T obj) where T : IPersistable, new()
         {
             // Remove the exisiting record
