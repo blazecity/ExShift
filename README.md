@@ -44,6 +44,7 @@ ClassA a1 = new ClassA { PkA = "primaryKeyA", AnotherPropertyInA = "A Property",
 All classes, for which objects will be persisted, need to have the following things:
 - They need to implemented the `IPersistable` interface.
 - One and only one property needs to be marked with the `PrimaryKey` attribute.
+- Lists need to marked with `MultiValue` attribute.
 
 Optionally, you can mark a property with the `Index` attribute. Then an index will be created automatically.
 
