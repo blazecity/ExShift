@@ -4,7 +4,10 @@ using System.Reflection;
 
 namespace ExShift.Mapping
 {
-    class AttributeHelper
+    /// <summary>
+    /// This class provides helping functionalities for working with attributes.
+    /// </summary>
+    public class AttributeHelper
     {
         /// <summary>
         /// Gets a list of properties, which are marked with the specified attribute.
@@ -26,6 +29,12 @@ namespace ExShift.Mapping
             return multiValueProperties;
         }
 
+        /// <summary>
+        /// Gets the <see cref="PropertyInfo"/> for a property with the specified attribute. 
+        /// </summary>
+        /// <typeparam name="T">Type to look for the property</typeparam>
+        /// <param name="attributeType">Attribute type</param>
+        /// <returns><see cref="PropertyInfo"/></returns>
         public static PropertyInfo GetProperty<T>(Type attributeType) where T : IPersistable
         {
             PropertyInfo[] properties = typeof(T).GetProperties();
@@ -39,6 +48,11 @@ namespace ExShift.Mapping
             return null;
         }
 
+        /// <summary>
+        /// Gets the primary key of an <see cref="IPersistable"/> object as a string.
+        /// </summary>
+        /// <param name="obj"><see cref="IPersistable"/> object</param>
+        /// <returns>Primary key as string</returns>
         public static string GetPrimaryKey(IPersistable obj)
         {
             Type attributeHelperType = typeof(AttributeHelper);
