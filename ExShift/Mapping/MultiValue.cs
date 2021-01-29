@@ -1,11 +1,11 @@
 ﻿using System;
 
-namespace ExShift.Util
+namespace ExShift.Mapping
 {
     [AttributeUsage(AttributeTargets.Property)]
-    public class Index : Attribute
+    public class MultiValue : Attribute
     {
-        public Index()
+        public MultiValue()
         {
         }
     }

@@ -1,10 +1,9 @@
 ﻿using System;
 
-namespace ExShift.Util
+namespace ExShift.Mapping
 {
     [AttributeUsage(AttributeTargets.Property, Inherited = true)]
-    public class PrimaryKey : Attribute
+    public class ForeignKey : Attribute
     {
-
     }
 }

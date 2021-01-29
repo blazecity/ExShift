@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace ExShift.Util
+namespace ExShift.Mapping
 {
     public class QueryNode
     {

@@ -1,4 +1,4 @@
-﻿using ExShift.Util;
+﻿using ExShift.Mapping;
 using System.Collections.Generic;
 
 namespace ExShift.Tests.Setup

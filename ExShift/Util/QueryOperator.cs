@@ -1,4 +1,4 @@
-﻿namespace ExShift.Util
+﻿namespace ExShift.Mapping
 {
     public enum QueryOperator
     {

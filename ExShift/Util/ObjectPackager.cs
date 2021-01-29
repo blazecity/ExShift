@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text.Json;
 
-namespace ExShift.Util
+namespace ExShift.Mapping
 {
     /// <summary>
     /// This class is used for serializing objects into a raw string and vice versa.

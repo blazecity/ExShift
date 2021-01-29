@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace ExShift.Util.Tests
+namespace ExShift.Mapping.Tests
 {
     [TestClass]
     public class QueryNodeTests

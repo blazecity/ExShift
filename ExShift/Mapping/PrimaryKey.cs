@@ -1,9 +1,10 @@
 ﻿using System;
 
-namespace ExShift.UtilMapping
+namespace ExShift.Mapping
 {
     [AttributeUsage(AttributeTargets.Property, Inherited = true)]
-    public class IndexedField : Attribute
+    public class PrimaryKey : Attribute
     {
+
     }
 }
