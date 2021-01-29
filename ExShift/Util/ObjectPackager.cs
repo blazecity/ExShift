@@ -4,19 +4,33 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text.Json;
-using System.Linq;
 
 namespace ExShift.Util
 {
+    /// <summary>
+    /// This class is used for serializing objects into a raw string and vice versa.
+    /// </summary>
     public class ObjectPackager
     {
-        public Dictionary<string, object> Properties { get; }
+        private readonly Dictionary<string, object> Properties;
 
+        /// <summary>
+        /// Constructor for a new <c>ObjectPackager</c> object.
+        /// </summary>
         public ObjectPackager()
         {
             Properties = new Dictionary<string, object>();
         }
 
+        /// <summary>
+        /// Takes an <see cref="IPersistable"/> object and serializes it into a JSON string.
+        /// <para>
+        /// Nested objects will won't be serialized automatically. This has to be done first.
+        /// Then in the parent object only the foreign key will be serialized.
+        /// </para>
+        /// </summary>
+        /// <param name="obj"><see cref="IPersistable"/></param>
+        /// <returns>JSON string</returns>
         public string Package(IPersistable obj)
         {
             List<PropertyInfo> properties = new List<PropertyInfo>(obj.GetType().GetProperties());
@@ -45,6 +59,16 @@ namespace ExShift.Util
             return JsonSerializer.Serialize(Properties);
         }
 
+        /// <summary>
+        /// Deserializes a JSON string into an object.
+        /// <para>
+        /// Note that also nested objects will also be deserialized and therefore a 
+        /// reference is set pointing to it.
+        /// </para>
+        /// </summary>
+        /// <typeparam name="T">Type of the object to be deserialized (highest level)</typeparam>
+        /// <param name="jsonPayload">Serialized object (JSON)</param>
+        /// <returns>Deserialized object</returns>
         public T Unpackage<T>(string jsonPayload) where T : IPersistable, new()
         {
             Dictionary<string, JsonElement> resolvedDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonPayload);
@@ -86,12 +110,23 @@ namespace ExShift.Util
             return newObject;
         }
 
+        /// <summary>
+        /// Turns a JSON string into a <see cref="JsonElement"/> object.
+        /// </summary>
+        /// <param name="payload">JSON string</param>
+        /// <returns><see cref="JsonElement"/></returns>
         public static JsonElement DeserializeTupel(string payload)
         {
             JsonDocument json = JsonDocument.Parse(payload);
             return json.RootElement;
         }
 
+        /// <summary>
+        /// Takes a <see cref="JsonElement"/> and returns its value.
+        /// </summary>
+        /// <param name="dataType">Data type of the value</param>
+        /// <param name="jsonEl"><see cref="JsonElement"/></param>
+        /// <returns></returns>
         public static dynamic ConvertJsonElement(Type dataType, JsonElement jsonEl)
         {
             Dictionary<Type, Func<JsonElement, dynamic>> actionTable = new Dictionary<Type, Func<JsonElement, dynamic>>
@@ -104,6 +139,13 @@ namespace ExShift.Util
             return actionTable[dataType].Invoke(jsonEl);
         }
 
+        /// <summary>
+        /// Creates a generic method (helper method).
+        /// </summary>
+        /// <param name="name">Method name</param>
+        /// <param name="genericType">Generic type</param>
+        /// <param name="methodOrigin">Class with the given method</param>
+        /// <returns><see cref="MethodInfo"/></returns>
         private MethodInfo GetGenericMethod(string name, Type genericType, Type methodOrigin = null)
         {
             Type origin = methodOrigin;
@@ -112,9 +154,14 @@ namespace ExShift.Util
                 origin = GetType();
             }
             return origin.GetMethod(name).MakeGenericMethod(genericType);
-
         }
 
+        /// <summary>
+        /// Adds the foreign key into the Properties <see cref="Dictionary{TKey, TValue}"/>
+        /// instead of the whole (nested) object (helper method).
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="property"></param>
         private void ConvertForeignKey(IPersistable obj, PropertyInfo property)
         {
             IPersistable nestedObject = property.GetValue(obj) as IPersistable;
