@@ -213,6 +213,11 @@ namespace ExShift.Mapping
                 {
                     values.Remove(row);
                 }
+
+                if (values.Count == 0)
+                {
+                    index.Remove(key);
+                }
             }
             ResetIndex<T>(propertyName, index);
         }
@@ -239,13 +244,66 @@ namespace ExShift.Mapping
         /// <typeparam name="T">Type of objects which has been deleted</typeparam>
         /// <param name="obj">Object which has been deleted</param>
         /// <param name="row">Former row number</param>
-        private static void DeleteIndexEntries<T>(T obj, int row) where T : IPersistable
+        private static void DeleteIndexEntries<T>(T obj, int row) where T : IPersistable, new()
+        {
+            List<PropertyInfo> indexProperties = AttributeHelper.GetPropertiesByAttribute<T>(typeof(Index));
+            indexProperties.AddRange(AttributeHelper.GetPropertiesByAttribute<T>(typeof(PrimaryKey)));
+            foreach (T followingObject in YieldFollowingObjects<T>(row))
+            {
+                int oldRow = GetRowNumber<T>(AttributeHelper.GetPrimaryKey(followingObject));
+                ResetRowInIndex<T>(followingObject, oldRow, oldRow - 1);
+            }
+
+            foreach (PropertyInfo indexProperty in indexProperties)
+            {
+                DeleteIndexEntry<T>(indexProperty.Name, indexProperty.GetValue(obj).ToString(), row);
+            }
+        }
+
+        /// <summary>
+        /// Yields all objects from a table after the specified row.
+        /// </summary>
+        /// <typeparam name="T">Type of object to retrieve</typeparam>
+        /// <param name="row">Row (exclusive) to follow</param>
+        /// <returns><see cref="IPersistable"/></returns>
+        private static IEnumerable<T> YieldFollowingObjects<T>(int row) where T : IPersistable, new()
+        {
+            Range usedRange = FindTable(typeof(T).Name).UsedRange;
+            ObjectPackager objectPackager = new ObjectPackager();
+            if (usedRange.Rows.Count <= 1)
+            {
+                yield break;
+            }
+            for (int i = row + 1; i <= usedRange.Rows.Count; i++)
+            {
+                yield return objectPackager.Unpackage<T>(usedRange.Cells[i, 1].Value.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Resets the row list in a index.
+        /// </summary>
+        /// <typeparam name="T">Object type</typeparam>
+        /// <param name="obj">Object to update</param>
+        /// <param name="oldRow">Old row number</param>
+        /// <param name="newRow">New row number</param>
+        private static void ResetRowInIndex<T>(T obj, int oldRow, int newRow) where T : IPersistable, new()
         {
             List<PropertyInfo> indexProperties = AttributeHelper.GetPropertiesByAttribute<T>(typeof(Index));
             indexProperties.AddRange(AttributeHelper.GetPropertiesByAttribute<T>(typeof(PrimaryKey)));
             foreach (PropertyInfo indexProperty in indexProperties)
             {
-                DeleteIndexEntry<T>(indexProperty.Name, indexProperty.GetValue(obj).ToString(), row);
+                Dictionary<string, List<int>> index = FindIndex<T>(indexProperty.Name);
+                string key = indexProperty.GetValue(obj).ToString();
+                if (index.TryGetValue(key, out List<int> values))
+                {
+                    if (values.Contains(oldRow))
+                    {
+                        values.Remove(oldRow);
+                        values.Add(newRow);
+                    }
+                }
+                ResetIndex<T>(indexProperty.Name, index);
             }
         }
 
@@ -341,7 +399,7 @@ namespace ExShift.Mapping
                 int rowNumber = rowNumbers[0];
                 return rowNumber;
             }
-            throw new ArgumentException(">> Error 4: There is no record with the specified primary key");
+            return -1;
         }
 
         /// <summary>
@@ -499,18 +557,19 @@ namespace ExShift.Mapping
         /// <param name="obj">Object to delete</param>
         public static void Delete<T>(T obj) where T : IPersistable, new()
         {
-            // Remove the exisiting record
             string primaryKey = AttributeHelper.GetPrimaryKey(obj);
             string tableName = obj.GetType().Name;
             int rowNumber = GetRowNumber<T>(primaryKey);
+
+            // Reorganize index
+            DeleteIndexEntries(obj, rowNumber);
+
+            // Remove the exisiting record
             Worksheet dataTable = FindTable(tableName);
             dataTable.Rows[rowNumber].EntireRow.Delete();
 
             // Decrement row counter
             ChangeRowCounter(tableName, -1);
-
-            // Reorganize index
-            DeleteIndexEntries(obj, rowNumber);
         }
     }
 }
