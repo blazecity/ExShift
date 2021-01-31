@@ -38,6 +38,7 @@ namespace ExShift.Mapping
             {
                 ws = workbook.Worksheets.Add();
                 ws.Name = name;
+                ws.Visible = XlSheetVisibility.xlSheetHidden;
             }
             return ws;
             
