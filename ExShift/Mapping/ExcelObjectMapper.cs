@@ -436,6 +436,21 @@ namespace ExShift.Mapping
         }
 
         /// <summary>
+        /// Yields all entries from a table and deserializes them into objects.
+        /// </summary>
+        /// <typeparam name="T">Object type</typeparam>
+        /// <returns>Yields all objects</returns>
+        public static IEnumerable<T> GetAllObjects<T>() where T : IPersistable, new()
+        {
+            ObjectPackager objectPackager = new ObjectPackager();
+            foreach (string jsonPayload in GetAll<T>())
+            {
+                T newObj = objectPackager.Unpackage<T>(jsonPayload);
+                yield return newObj;
+            }
+        }
+
+        /// <summary>
         /// Gets the index for the specified property.
         /// </summary>
         /// <typeparam name="T">Type which holds the property</typeparam>

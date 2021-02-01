@@ -34,9 +34,22 @@ namespace ExShift.Mapping.Tests
         public void GetAllTest()
         {
             // Act
-            IEnumerable<string> resultList = ExcelObjectMapper.GetAll<PackageTestObject>();
             byte counter = 0;
-            foreach (string s in resultList)
+            foreach (string s in ExcelObjectMapper.GetAll<PackageTestObject>())
+            {
+                counter++;
+            }
+
+            // Assert
+            Assert.AreEqual(6, counter);
+        }
+
+        [TestMethod("Get all objects")]
+        public void GetAllObjectsTest()
+        {
+            // Act
+            byte counter = 0;
+            foreach (PackageTestObject obj in ExcelObjectMapper.GetAllObjects<PackageTestObject>())
             {
                 counter++;
             }
