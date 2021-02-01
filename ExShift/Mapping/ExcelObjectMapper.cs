@@ -69,13 +69,18 @@ namespace ExShift.Mapping
         /// </summary>
         public static void Initialize()
         {
-            Worksheet sysTable = CreateUnformattedTable("__sys");
-            
-            // Intialize ID counter
-            sysTable.Cells[1, 1].Value = 1;
+            string sysTableName = "__sys";
+            Worksheet sysTable = FindTable(sysTableName);
+            if (sysTable == null)
+            {
+                sysTable = CreateUnformattedTable("__sys");
 
-            // Initialize row counter
-            sysTable.Cells[2, 1].Value = "{}";
+                // Intialize ID counter
+                sysTable.Cells[1, 1].Value = 1;
+
+                // Initialize row counter
+                sysTable.Cells[2, 1].Value = "{}";
+            }
         }
 
         /// <summary>
