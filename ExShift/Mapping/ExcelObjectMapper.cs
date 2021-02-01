@@ -414,7 +414,12 @@ namespace ExShift.Mapping
         /// <returns>Yields all entries</returns>
         public static IEnumerable<string> GetAll<T>() where T : IPersistable
         {
-            Range dataColumn = FindTable(typeof(T).Name).UsedRange.Columns[1];
+            Worksheet table = FindTable(typeof(T).Name);
+            if (table == null)
+            {
+                yield break;
+            }
+            Range dataColumn = table.UsedRange.Columns[1];
             foreach (Range cell in dataColumn.Cells)
             {
                 if (cell == null)
