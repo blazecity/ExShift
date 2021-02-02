@@ -1,4 +1,8 @@
-# ExShift
+<h1 align="center">ExShift</h1>
+
+<p align="center">
+  <img width="400" src="https://github.com/darkshine0x/ExShift/blob/main/ExShift_logo.png?raw=true" alt="ExShift logo">
+</p>
 
 ExShift is a OR mapping tool for storing objects in Excel sheets.
 
