@@ -100,3 +100,7 @@ List<ClassA> resultList = Query<ClassA>.Select()
 ### Indizes
 
 When a property is marked with the `Index` attribute, an index is created. This also automatically applies to the primary key properties. An index is simply a `Dictionary`, where the keys are the property values and the values of the dictionary are lists of integers, which point to the corresponding rows.
+
+### Restrictions
+- Currently it is not possible to search with the nested objects (similiar to `JOIN` in SQL). This is planned for a future release.
+- Also you cannot change the primary key attribute once it has been set and persisted. The problem is the update of the foreign keys. But this will be implemented as well.
