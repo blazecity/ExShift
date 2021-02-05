@@ -11,7 +11,7 @@ ExShift is a OR mapping tool for storing objects in Excel sheets.
 Let's have a look at this example.
 
 
-```
+```C#
 public class ClassA : IPersistable
 {
   [PrimaryKey]
@@ -38,7 +38,7 @@ public class ClassB : IPersistable
 }
 ```
 
-```
+```C#
 ClassB b1 = new ClassB { PkB = 1, AnotherPropertyInB = "B Property" };
 ClassA a1 = new ClassA { PkA = "primaryKeyA", AnotherPropertyInA = "A Property", ForeignObject = b1};
 ```
@@ -54,7 +54,8 @@ Optionally, you can mark a property with the `Index` attribute. Then an index wi
 
 ### Persting objects
 
-```ExcelObjectMapper.Persist(b1)
+```C#
+ExcelObjectMapper.Persist(b1)
 ExcelObjectMapper.Persist(a1)
 ```
 It is important to persist the Object `b1` first. The objects will be serialized into a **JSON** string. However for nested objects only a reference (via primary key) is stored.
@@ -72,10 +73,14 @@ Table for ClassB (Excel sheet):
 | {"PkB": 1, "AnotherPropertyInA":"B Property"} |
 
 ### Update
-```ExcelObjectMapper.Update(IPersistable)```
+```C#
+ExcelObjectMapper.Update(IPersistable);
+```
 
 ### Delete
-```ExcelObjectMapper.Delete(IPersistable)```
+```C#
+ExcelObjectMapper.Delete(IPersistable);
+```
 
 ### Searching objects
 
@@ -87,14 +92,14 @@ For searching objects you have the two following possibilites:
 
 For this let's take the example from the begining and let's say we want to find the object of `ClassA`, we persisted:
 
-```
+```C#
 List<ClassA> resultList = Query<ClassA>.Select()
                                        .Run();
 ```
 
 This would return all stored objects of `ClassA`. But you can also use the `Where(string)`, `And(string)` and `Or(string)` methods:
 
-```
+```C#
 List<ClassA> resultList = Query<ClassA>.Select()
                                        .Where("PkA = 'primaryKeyA'")
                                        .And("AnotherPropertyInA = 'A Property'")
