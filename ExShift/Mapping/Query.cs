@@ -119,7 +119,20 @@ namespace ExShift.Mapping
                     foreach (T element in intermediateResult)
                     {
                         PropertyInfo property = element.GetType().GetProperty(nextNode.Attribute);
-                        if (nextNode.EvaluateExpression(property.GetValue(element)))
+                        dynamic expected;
+                        if (property.PropertyType == typeof(string))
+                        {
+                            expected = property.GetValue(element);
+                        }
+                        else if (!property.PropertyType.IsPrimitive)
+                        {
+                            expected = AttributeHelper.GetPrimaryKey(property.GetValue(element) as IPersistable);
+                        }
+                        else
+                        {
+                            expected = property.GetValue(element);
+                        }
+                        if (nextNode.EvaluateExpression(expected))
                         {
                             result.Add(element);
                         }
@@ -243,7 +256,6 @@ namespace ExShift.Mapping
                     bool elementIsQualified = false;
                     foreach (QueryNode qn in queryNodes)
                     {
-                        elementIsQualified = CheckRawJson(qn, rawJson);
                         bool evaluationResult = CheckRawJson(qn, rawJson);
                         switch (qn.Operator)
                         {

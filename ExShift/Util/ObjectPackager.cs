@@ -71,6 +71,10 @@ namespace ExShift.Mapping
         /// <returns>Deserialized object</returns>
         public T Unpackage<T>(string jsonPayload) where T : IPersistable, new()
         {
+            if (string.IsNullOrEmpty(jsonPayload) || string.IsNullOrWhiteSpace(jsonPayload) || jsonPayload == "-")
+            {
+                return default;
+            }
             Dictionary<string, JsonElement> resolvedDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonPayload);
             Type type = typeof(T);
             List<PropertyInfo> propertyList = new List<PropertyInfo>(type.GetProperties());
