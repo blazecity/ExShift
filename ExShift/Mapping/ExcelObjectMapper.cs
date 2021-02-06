@@ -92,7 +92,6 @@ namespace ExShift.Mapping
         {
             // Create sheet
             Worksheet table = CreateUnformattedTable(name);
-            table.Application.ActiveWindow.FreezePanes = true;
             table.Visible = XlSheetVisibility.xlSheetHidden;
 
             // Initialize row counter
