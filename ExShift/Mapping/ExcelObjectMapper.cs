@@ -67,8 +67,13 @@ namespace ExShift.Mapping
         /// <summary>
         /// Sets up the internal helper worksheets.
         /// </summary>
-        public static void Initialize()
+        public static void Initialize(Workbook workbook)
         {
+            ExcelObjectMapper.workbook = workbook;
+            if (ExcelObjectMapper.workbook == null)
+            {
+                throw new ArgumentNullException(">> Error 1: No workbbok set.");
+            }
             string sysTableName = "__sys";
             Worksheet sysTable = FindTable(sysTableName);
             if (sysTable == null)
@@ -135,6 +140,10 @@ namespace ExShift.Mapping
         private static int ChangeRowCounter(string tableName, int change)
         {
             Worksheet sysTable = FindTable("__sys");
+            if (sysTable == null)
+            {
+                throw new ArgumentException(">> Error 2: OR-Mapper has not been initalized.");
+            }
             string jsonCounter = sysTable.Cells[2, 1].Value;
             Dictionary<string, int> dictCounter = JsonSerializer.Deserialize<Dictionary<string, int>>(jsonCounter);
             if (dictCounter.ContainsKey(tableName))
@@ -156,11 +165,21 @@ namespace ExShift.Mapping
         /// <param name="obj">Object to persisted</param>
         public static void Persist<T>(T obj) where T : IPersistable
         {
+            if (obj == null)
+            {
+                throw new ArgumentException(">> Error 3: Object to persist must no be null.");
+            }
+
             // Check for primary key (must be unique)
             Worksheet table = GetPersistenceTable<T>();
             string primaryKey = AttributeHelper.GetPrimaryKey(obj);
             PropertyInfo primaryKeyProperty = AttributeHelper.GetProperty<T>(typeof(PrimaryKey));
             Dictionary<string, List<int>> index = FindIndex<T>(primaryKeyProperty.Name);
+            if (index == null)
+            {
+                throw new ArgumentException(">> Error 4: Primary key property not found.");
+            }
+
             if (index.ContainsKey(primaryKey))
             {
                 return;
@@ -351,6 +370,10 @@ namespace ExShift.Mapping
         {
             ObjectPackager objectPackager = new ObjectPackager();
             string rawEntry = GetRawEntry<T>(row);
+            if (string.IsNullOrEmpty(rawEntry))
+            {
+                return default;
+            }
             return objectPackager.Unpackage<T>(rawEntry);
             
         }
@@ -393,8 +416,12 @@ namespace ExShift.Mapping
         private static int GetRowNumber<T>(string primaryKey) where T : IPersistable, new()
         {
             Dictionary<string, List<int>> index = FindIndex<T>(AttributeHelper.GetProperty<T>(typeof(PrimaryKey)).Name);
-            bool primaryKeyExists = index.TryGetValue(primaryKey, out List<int> rowNumbers);
-            if (primaryKeyExists)
+            if (index == null)
+            {
+                return -1;
+            }
+
+            if (index.TryGetValue(primaryKey, out List<int> rowNumbers))
             {
                 if (rowNumbers.Count == 0)
                 {
