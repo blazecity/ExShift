@@ -13,8 +13,7 @@ namespace ExShift.Mapping.Tests
         {
             wb.Close(0);
             wb = app.Workbooks.Add();
-            ExcelObjectMapper.SetWorkbook(wb);
-            ExcelObjectMapper.Initialize();
+            ExcelObjectMapper.Initialize(wb);
 
             // Arrange
             PackageTestObject obj = new PackageTestObject(1, 2);
@@ -123,8 +122,7 @@ namespace ExShift.Mapping.Tests
             // Arrange
             wb.Close(0);
             wb = app.Workbooks.Add();
-            ExcelObjectMapper.SetWorkbook(wb);
-            ExcelObjectMapper.Initialize();
+            ExcelObjectMapper.Initialize(wb);
             PackageTestObject obj1 = new PackageTestObject(1, 2);
             PackageTestObject obj2 = new PackageTestObject(1, 2);
 

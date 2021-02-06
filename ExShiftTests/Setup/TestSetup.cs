@@ -16,8 +16,7 @@ namespace ExShiftTests.Setup
         {
             app = new Application();
             wb = app.Workbooks.Add();
-            ExcelObjectMapper.SetWorkbook(wb);
-            ExcelObjectMapper.Initialize();
+            ExcelObjectMapper.Initialize(wb);
         }
 
         [AssemblyCleanup]
