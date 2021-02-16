@@ -52,7 +52,7 @@ namespace ExShift.Mapping
         /// <see cref="Worksheet"/> if one exists with the specified name 
         /// or else null if none is found.
         /// </returns>
-        private static Worksheet FindTable(string name)
+        public static Worksheet FindTable(string name)
         {
             try
             {
