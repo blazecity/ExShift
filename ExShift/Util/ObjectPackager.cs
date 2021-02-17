@@ -81,22 +81,31 @@ namespace ExShift.Mapping
             T newObject = new T();
             foreach (PropertyInfo property in propertyList)
             {
-                if (property.GetCustomAttribute<ForeignKey>() != null)
+                if (property.GetCustomAttribute<ForeignKey>() != null || property.GetCustomAttribute<MultiValue>() != null)
                 {
                     MethodInfo findMethod = typeof(ExcelObjectMapper).GetMethod("GetRawEntry", new Type[] { typeof(string) });
                     if (property.GetCustomAttribute<MultiValue>() != null)
                     {
                         Type propertyTypeWithoutGenericType = property.PropertyType.GetGenericTypeDefinition();
                         Type genericType = property.PropertyType.GetGenericArguments()[0];
-                        findMethod = findMethod.MakeGenericMethod(genericType);
                         Type listType = propertyTypeWithoutGenericType.MakeGenericType(genericType);
                         object newList = Activator.CreateInstance(listType);
-
                         JsonElement list = resolvedDict[property.Name];
-                        for (int index = 0; index < list.GetArrayLength(); index++)
+                        if (!genericType.IsPrimitive)
                         {
-                            string json = findMethod.Invoke(null, new string[] { list[index].ToString() }) as string;
-                            ((IList)newList).Add(GetGenericMethod("Unpackage", genericType).Invoke(this, new string[] { json }));
+                            findMethod = findMethod.MakeGenericMethod(genericType);
+                            for (int index = 0; index < list.GetArrayLength(); index++)
+                            {
+                                string json = findMethod.Invoke(null, new string[] { list[index].ToString() }) as string;
+                                ((IList)newList).Add(GetGenericMethod("Unpackage", genericType).Invoke(this, new string[] { json }));
+                            }
+                        }
+                        else
+                        {
+                            for (int index = 0; index < list.GetArrayLength(); index++)
+                            {
+                                ((IList)newList).Add(ConvertJsonElement(genericType, list[index]));
+                            }
                         }
                         property.SetValue(newObject, newList);
                         continue;

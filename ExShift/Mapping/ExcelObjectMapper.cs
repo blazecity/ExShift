@@ -113,7 +113,7 @@ namespace ExShift.Mapping
         /// <returns>New or existing data table</returns>
         public static Worksheet GetPersistenceTable<T>() where T : IPersistable
         {
-            string tableName = typeof(T).Name;
+            string tableName = GetTableName<T>();            
             Worksheet ws = FindTable(tableName);
             if (ws == null)
             {
@@ -129,6 +129,26 @@ namespace ExShift.Mapping
                 }
             }
             return ws;
+        }
+
+        /// <summary>
+        /// Gets the table name based on its type.
+        /// </summary>
+        /// <typeparam name="T">Type to look for</typeparam>
+        /// <returns>Table name</returns>
+        public static string GetTableName<T>()
+        {
+            string tableName;
+            if (typeof(T).IsGenericType)
+            {
+                Type typeArg = AttributeHelper.GetGenericArgument(typeof(T));
+                tableName = string.Concat(AttributeHelper.GetGenericType(typeof(T)), typeArg.Name);
+            }
+            else
+            {
+                tableName = typeof(T).Name;
+            }
+            return tableName;
         }
 
         /// <summary>
@@ -170,8 +190,8 @@ namespace ExShift.Mapping
                 throw new ArgumentException(">> Error 3: Object to persist must no be null.");
             }
 
-            // Check for primary key (must be unique)
             Worksheet table = GetPersistenceTable<T>();
+            // Check for primary key (must be unique)
             string primaryKey = AttributeHelper.GetPrimaryKey(obj);
             PropertyInfo primaryKeyProperty = AttributeHelper.GetProperty<T>(typeof(PrimaryKey));
             Dictionary<string, List<int>> index = FindIndex<T>(primaryKeyProperty.Name);
@@ -188,7 +208,7 @@ namespace ExShift.Mapping
             // Persist object
             ObjectPackager packager = new ObjectPackager();
             string jsonPayload = packager.Package(obj);
-            int row = ChangeRowCounter(typeof(T).Name, 1);
+            int row = ChangeRowCounter(table.Name, 1);
             table.Cells[row, 1].Value = jsonPayload;
 
             // Update indizes
@@ -274,7 +294,7 @@ namespace ExShift.Mapping
             foreach (T followingObject in YieldFollowingObjects<T>(row))
             {
                 int oldRow = GetRowNumber<T>(AttributeHelper.GetPrimaryKey(followingObject));
-                ResetRowInIndex<T>(followingObject, oldRow, oldRow - 1);
+                ResetRowInIndex(followingObject, oldRow, oldRow - 1);
             }
 
             foreach (PropertyInfo indexProperty in indexProperties)
@@ -291,7 +311,7 @@ namespace ExShift.Mapping
         /// <returns><see cref="IPersistable"/></returns>
         private static IEnumerable<T> YieldFollowingObjects<T>(int row) where T : IPersistable, new()
         {
-            Range usedRange = FindTable(typeof(T).Name).UsedRange;
+            Range usedRange = FindTable(GetTableName<T>()).UsedRange;
             ObjectPackager objectPackager = new ObjectPackager();
             if (usedRange.Rows.Count <= 1)
             {
@@ -338,7 +358,7 @@ namespace ExShift.Mapping
         /// <param name="index">New index as <see cref="Dictionary{string, List{int}}"/></param>
         private static void ResetIndex<T>(string propertyName, Dictionary<string, List<int>> index)
         {
-            string tableName = "Idx_" + GetShortenedHash(typeof(T).Name + propertyName);
+            string tableName = GetIndexTableName<T>(propertyName);
             Worksheet ws = FindTable(tableName);
             ws.Cells[1, 1].Value = JsonSerializer.Serialize(index);
         }
@@ -440,7 +460,7 @@ namespace ExShift.Mapping
         /// <returns>Yields all entries</returns>
         public static IEnumerable<string> GetAll<T>() where T : IPersistable
         {
-            Worksheet table = FindTable(typeof(T).Name);
+            Worksheet table = FindTable(GetTableName<T>());
             if (table == null)
             {
                 yield break;
@@ -484,7 +504,7 @@ namespace ExShift.Mapping
         /// <returns>Index as <see cref="Dictionary{TKey, TValue}"/> but if none exists <c>null</c> is returned.</returns>
         public static Dictionary<string, List<int>> FindIndex<T>(string property) where T : IPersistable
         {
-            string tableName = "Idx_" + GetShortenedHash(typeof(T).Name + property);
+            string tableName = GetIndexTableName<T>(property);
             Worksheet indexTable = FindTable(tableName);
             if (indexTable == null)
             {
@@ -503,13 +523,24 @@ namespace ExShift.Mapping
         /// <returns><c>True</c> if index exists, else <c>false</c></returns>
         public static bool IsIndexed<T>(string property) where T : IPersistable
         {
-            string tableName = "Idx_" + GetShortenedHash(typeof(T).Name + property);
+            string tableName = GetIndexTableName<T>(property);
             Worksheet indexTable = FindTable(tableName);
             if (indexTable == null)
             {
                 return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Gets name of an index table.
+        /// </summary>
+        /// <typeparam name="T">Type which holds the property</typeparam>
+        /// <param name="property">Index property name</param>
+        /// <returns>Table name</returns>
+        private static string GetIndexTableName<T>(string property)
+        {
+            return "Idx_" + GetShortenedHash(GetTableName<T>() + property);
         }
 
         /// <summary>
@@ -552,12 +583,12 @@ namespace ExShift.Mapping
                 return true;
             }
 
-            if (FindTable(typeof(T).Name) == null)
+            if (FindTable(GetTableName<T>()) == null)
             {
                 return false;
             }
 
-            string tableName = "Idx_" + GetShortenedHash(typeof(T).Name + property);
+            string tableName = GetIndexTableName<T>(property);
             Worksheet indexTable = CreateUnformattedTable(tableName);
             Dictionary<string, List<int>> index = new Dictionary<string, List<int>>();
             int rowCounter = 1;
@@ -593,7 +624,7 @@ namespace ExShift.Mapping
             // Replace the existing record
             string primaryKey = AttributeHelper.GetPrimaryKey(obj);
             int rowNumber = GetRowNumber<T>(primaryKey);
-            Worksheet dataTable = FindTable(obj.GetType().Name);
+            Worksheet dataTable = FindTable(GetTableName<T>());
             ObjectPackager objectPackager = new ObjectPackager();
             dataTable.Cells[rowNumber, 1].Value = objectPackager.Package(obj);
 
@@ -609,7 +640,7 @@ namespace ExShift.Mapping
         public static void Delete<T>(T obj) where T : IPersistable, new()
         {
             string primaryKey = AttributeHelper.GetPrimaryKey(obj);
-            string tableName = obj.GetType().Name;
+            string tableName = GetTableName<T>();
             int rowNumber = GetRowNumber<T>(primaryKey);
 
             // Reorganize index

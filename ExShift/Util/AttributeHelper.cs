@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace ExShift.Mapping
 {
@@ -60,6 +61,33 @@ namespace ExShift.Mapping
             MethodInfo executableMethod = getPropertyMethod.MakeGenericMethod(obj.GetType());
             PropertyInfo primaryKey = executableMethod.Invoke(null,  new object[] { typeof(PrimaryKey) }) as PropertyInfo;
             return primaryKey.GetValue(obj).ToString();
+        }
+
+
+        /// <summary>
+        /// Gets the type argument of a generic type.
+        /// </summary>
+        /// <param name="type">Generic type</param>
+        /// <returns>Type argument</returns>
+        public static Type GetGenericArgument(Type type)
+        {
+            if (type.IsGenericType)
+            {
+                Type[] arguments = type.GetGenericArguments();
+                return arguments[0];
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the name of a generic type without the number of number of type arguments.
+        /// </summary>
+        /// <param name="type">Generic type</param>
+        /// <returns>Type name</returns>
+        public static string GetGenericType(Type type)
+        {
+            Regex rgx = new Regex("`");
+            return rgx.Split(type.Name)[0];
         }
     }
 }
