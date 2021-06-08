@@ -87,6 +87,7 @@
   <ItemGroup>
     <Compile Include="Mapping\ExcelObjectMapperTests.cs" />
     <Compile Include="Mapping\QueryTests.cs" />
+    <Compile Include="Setup\GenericTestObject.cs" />
     <Compile Include="Setup\TestSetup.cs" />
     <Compile Include="Setup\PackageTestObject.cs" />
     <Compile Include="Util\QueryNodeTests.cs" />

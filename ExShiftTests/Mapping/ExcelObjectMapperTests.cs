@@ -67,6 +67,25 @@ namespace ExShift.Mapping.Tests
             Assert.AreEqual(3, retrievedObject.ListOfNestedObjects.Count);
         }
 
+        [TestMethod("Persist generic types")]
+        public void PersistGenericTypesTest()
+        {
+            // Arrange
+            List<int> numbers = new List<int> { 1, 2, 34, 6, 8787 };
+            GenericTestObjectPT<int> obj1 = new GenericTestObjectPT<int> { Pk = 1, List = numbers };
+            List<PackageTestObject> testObjects = new List<PackageTestObject>(ExcelObjectMapper.GetAllObjects<PackageTestObject>());
+            GTO<PackageTestObject> obj2 = new GTO<PackageTestObject> { Pk = 1, List =  testObjects};
+
+            // Act
+            ExcelObjectMapper.Persist(obj1);
+            ExcelObjectMapper.Persist(obj2);
+
+            GenericTestObjectPT<int> obj1AfterPersistence = ExcelObjectMapper.Find<GenericTestObjectPT<int>>(AttributeHelper.GetPrimaryKey(obj1));
+            GTO<PackageTestObject> obj2AfterPersistence = ExcelObjectMapper.Find<GTO<PackageTestObject>>(AttributeHelper.GetPrimaryKey(obj2));
+            Assert.IsNotNull(obj1AfterPersistence);
+            Assert.IsNotNull(obj2AfterPersistence);
+        }
+
         [TestMethod("Create index with integer")]
         public void CreateIndexIntTest()
         {
